@@ -22,3 +22,9 @@ func TestParser(t *testing.T) {
 func TestIP(t *testing.T) {
 	fetchIPCN("127.0.0.1")
 }
+
+func BenchmarkParser(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		parse("127.0.0.1")
+	}
+}
