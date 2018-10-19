@@ -46,8 +46,13 @@ func fetchIPCN(ip string) {
 
 func main() {
 	args := os.Args
-	if len(args) != 2 {
-		fmt.Print("one arg only")
+	if len(args) == 1 {
+		fetchIPCN("")
+		os.Exit(0)
+	}
+
+	if len(args) > 2 {
+		fmt.Print("no or one arg only")
 		os.Exit(1)
 	}
 
