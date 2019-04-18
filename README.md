@@ -2,6 +2,10 @@
 
 Fetch IP location from ip.cn/ipip.net
 
+## Install
+
+`github.com/fannheyward/ip`
+
 ## Usage
 
 * `ip`: what's my IP and IP location
