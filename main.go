@@ -7,19 +7,15 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"regexp"
 	"sync"
 )
 
 func parse(input string) ([]string, error) {
 	ips := make([]string, 0)
-	r, err := regexp.Compile("^([0-9]{1,3}\\.){3}[0-9]{1,3}$")
-	if err != nil {
-		return nil, err
-	}
 
-	if r.MatchString(input) {
-		ips = append(ips, r.FindString(input))
+	ip := net.ParseIP(input)
+	if ip != nil {
+		ips = append(ips, ip.String())
 		return ips, nil
 	}
 
