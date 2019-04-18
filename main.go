@@ -72,12 +72,13 @@ func fetchIP(ip string) {
 
 	s := ip
 	for _, e := range m {
-		if e != "" {
-			if s == ip {
-				s = s + ": " + e
-			} else {
-				s = s + "-" + e
-			}
+		if e == "" {
+			continue
+		}
+		if s == ip {
+			s = s + ": " + e
+		} else {
+			s = s + "-" + e
 		}
 	}
 	log.Println(s)
