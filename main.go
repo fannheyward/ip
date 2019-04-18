@@ -1,10 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"io/ioutil"
+	"log"
 	"net"
+	"net/http"
 	"os"
-	"os/exec"
 	"regexp"
 	"sync"
 )
@@ -33,33 +35,69 @@ func parse(input string) ([]string, error) {
 	return ips, nil
 }
 
-func fetchIPCN(ip string) {
-	_url := "http://ip.cn/" + ip
-	cmd := exec.Command("curl", "-s", "-L", _url)
-	out, err := cmd.CombinedOutput()
+func fetchIP(ip string) {
+	local := false
+	_url := "http://freeapi.ipip.net/" + ip
+	if ip == "" {
+		_url = "http://ip.cn"
+		local = true
+	}
+	req, err := http.NewRequest("GET", _url, nil)
 	if err != nil {
-		return
+		log.Fatalln("new req error:", err.Error())
 	}
 
-	fmt.Print(string(out))
+	req.Header.Add("User-Agent", "curl/7.54.0")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatalln("HTTP error:", err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln("read body error:", err.Error())
+	}
+
+	if local {
+		log.Println(string(body))
+		os.Exit(0)
+	}
+
+	m := make([]string, 0)
+	err = json.Unmarshal(body, &m)
+	if err != nil {
+		log.Fatalln("json.Unmarshal error:", err.Error())
+	}
+
+	s := ip
+	for _, e := range m {
+		if e != "" {
+			if s == ip {
+				s = s + ": " + e
+			} else {
+				s = s + "-" + e
+			}
+		}
+	}
+	log.Println(s)
 }
 
 func main() {
+	log.SetFlags(0)
 	args := os.Args
 	if len(args) == 1 {
-		fetchIPCN("")
+		fetchIP("")
 		os.Exit(0)
 	}
 
 	if len(args) > 2 {
-		fmt.Print("no or one arg only")
-		os.Exit(1)
+		log.Fatalln("too many args")
 	}
 
 	ips, err := parse(args[1])
 	if err != nil {
-		fmt.Print("no IP found.")
-		os.Exit(1)
+		log.Fatalln("no IP found.")
 	}
 
 	wg := sync.WaitGroup{}
@@ -67,7 +105,7 @@ func main() {
 		wg.Add(1)
 		go func(ip string) {
 			defer wg.Done()
-			fetchIPCN(ip)
+			fetchIP(ip)
 		}(v)
 	}
 

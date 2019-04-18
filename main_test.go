@@ -20,7 +20,7 @@ func TestParser(t *testing.T) {
 }
 
 func TestIP(t *testing.T) {
-	fetchIPCN("127.0.0.1")
+	fetchIP("127.0.0.1")
 }
 
 func BenchmarkParser(b *testing.B) {
