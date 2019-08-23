@@ -4,7 +4,7 @@ Fetch IP location from ip.cn/ipip.net
 
 ## Install
 
-`github.com/fannheyward/ip`
+`go get github.com/fannheyward/ip`
 
 ## Usage
 
