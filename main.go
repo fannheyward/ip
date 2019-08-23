@@ -56,7 +56,18 @@ func fetchIP(ip string) {
 	}
 
 	if local {
-		log.Println(string(body))
+		var r struct {
+			IP      string `json:"ip"`
+			Country string `json:"country"`
+			City    string `json:"city"`
+		}
+
+		err := json.Unmarshal(body[:len(body)-1], &r)
+		if err != nil {
+			log.Println(string(body))
+			os.Exit(0)
+		}
+		log.Println(r.IP + ": " + r.Country + " " + r.City)
 		os.Exit(0)
 	}
 
