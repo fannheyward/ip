@@ -35,7 +35,7 @@ func fetchIP(ip string) {
 	local := false
 	_url := "http://freeapi.ipip.net/" + ip
 	if ip == "" {
-		_url = "http://ip.cn"
+		_url = "https://ip.fm"
 		local = true
 	}
 	req, err := http.NewRequest("GET", _url, nil)
