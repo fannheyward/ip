@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net"
@@ -10,110 +9,84 @@ import (
 	"sync"
 )
 
-func parse(input string) ([]string, error) {
-	ips := make([]string, 0)
+type hostIP struct {
+	domain string
+	ip     string
+}
 
+func parse(input string, c chan hostIP) {
 	ip := net.ParseIP(input)
 	if ip != nil {
-		ips = append(ips, ip.String())
-		return ips, nil
+		c <- hostIP{domain: "", ip: ip.String()}
+		return
 	}
 
 	nips, err := net.LookupIP(input)
 	if err != nil {
-		return nil, err
+		log.Println("unable to lookup:", input)
+		return
 	}
 
 	for _, v := range nips {
-		ips = append(ips, v.String())
+		c <- hostIP{domain: input, ip: v.String()}
 	}
-
-	return ips, nil
 }
 
-func fetchIP(ip string) {
-	local := false
-	_url := "http://freeapi.ipip.net/" + ip
-	if ip == "" {
-		_url = "https://ip.fm"
-		local = true
-	}
+func fetchIP(h hostIP) {
+	_url := "https://ip.fm/" + h.ip
 	req, err := http.NewRequest("GET", _url, nil)
 	if err != nil {
-		log.Fatalln("new req error:", err.Error())
+		log.Println("new req error:", err.Error())
+		return
 	}
 
 	req.Header.Add("User-Agent", "curl/7.54.0")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Fatalln("HTTP error:", err.Error())
+		log.Println("HTTP error:", err.Error())
+		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln("read body error:", err.Error())
+		log.Println("read body error:", err.Error())
+		return
 	}
-
-	if local {
-		var r struct {
-			IP      string `json:"ip"`
-			Country string `json:"country"`
-			City    string `json:"city"`
-		}
-
-		err := json.Unmarshal(body[:len(body)-1], &r)
-		if err != nil {
-			log.Println(string(body))
-			os.Exit(0)
-		}
-		log.Println(r.IP + ": " + r.Country + " " + r.City)
-		os.Exit(0)
+	if len(body) == 0 {
+		log.Println("response body none:", resp.Status)
+		return
 	}
-
-	m := make([]string, 0)
-	err = json.Unmarshal(body, &m)
-	if err != nil {
-		log.Fatalln("json.Unmarshal error:", err.Error())
-	}
-
-	s := ip
-	for _, e := range m {
-		if e == "" {
-			continue
-		}
-		if s == ip {
-			s = s + ": " + e
-		} else {
-			s = s + "-" + e
-		}
-	}
-	log.Println(s)
+	log.Println(h.domain + " " + string(body[:len(body)-1]))
 }
 
 func main() {
 	log.SetFlags(0)
 	args := os.Args
 	if len(args) == 1 {
-		fetchIP("")
+		fetchIP(hostIP{domain: "Local", ip: ""})
 		os.Exit(0)
 	}
 
-	if len(args) > 2 {
-		log.Fatalln("too many args")
-	}
-
-	ips, err := parse(args[1])
-	if err != nil {
-		log.Fatalln("no IP found.")
-	}
+	ch := make(chan hostIP, 10)
+	go func() {
+		for _, arg := range args[1:] {
+			parse(arg, ch)
+		}
+		close(ch)
+	}()
 
 	wg := sync.WaitGroup{}
-	for _, v := range ips {
+	for {
+		v, ok := <-ch
+		if !ok {
+			break
+		}
+
 		wg.Add(1)
-		go func(ip string) {
+		go func(hi hostIP) {
 			defer wg.Done()
-			fetchIP(ip)
+			fetchIP(hi)
 		}(v)
 	}
 
