@@ -15,8 +15,7 @@ type hostIP struct {
 }
 
 func parse(input string, c chan hostIP) {
-	ip := net.ParseIP(input)
-	if ip != nil {
+	if ip := net.ParseIP(input); ip != nil {
 		c <- hostIP{domain: "", ip: ip.String()}
 		return
 	}
