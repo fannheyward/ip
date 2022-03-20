@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"sync"
 )
@@ -18,6 +19,16 @@ func parse(input string, c chan hostIP) {
 	if ip := net.ParseIP(input); ip != nil {
 		c <- hostIP{domain: "", ip: ip.String()}
 		return
+	}
+
+	url, err := url.Parse(input)
+	if err != nil {
+		log.Println("parse url error:", err.Error())
+		return
+	}
+
+	if len(url.Hostname()) > 0 {
+		input = url.Hostname()
 	}
 
 	nips, err := net.LookupIP(input)
