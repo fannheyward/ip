@@ -16,19 +16,19 @@ type hostIP struct {
 }
 
 func parse(input string, c chan hostIP) {
-	if ip := net.ParseIP(input); ip != nil {
-		c <- hostIP{domain: "", ip: ip.String()}
+	if parsedIP := net.ParseIP(input); parsedIP != nil {
+		c <- hostIP{domain: "", ip: parsedIP.String()}
 		return
 	}
 
-	url, err := url.Parse(input)
+	parsedURL, err := url.Parse(input)
 	if err != nil {
 		log.Println("parse url error:", err.Error())
 		return
 	}
 
-	if len(url.Hostname()) > 0 {
-		input = url.Hostname()
+	if len(parsedURL.Hostname()) > 0 {
+		input = parsedURL.Hostname()
 	}
 
 	nips, err := net.LookupIP(input)
